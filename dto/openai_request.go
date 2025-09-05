@@ -64,6 +64,13 @@ type GeneralOpenAIRequest struct {
 	VlHighResolutionImages json.RawMessage `json:"vl_high_resolution_images,omitempty"`
 }
 
+// 在 GeneralOpenAIRequest 结构体的方法区域添加
+func (r *GeneralOpenAIRequest) ProcessToolTypes() {
+	for i := range r.Tools {
+		r.Tools[i].SetTypeBasedOnFunctionName()
+	}
+}
+
 func (r *GeneralOpenAIRequest) ToMap() map[string]any {
 	result := make(map[string]any)
 	data, _ := common.Marshal(r)
@@ -75,6 +82,15 @@ type ToolCallRequest struct {
 	ID       string          `json:"id,omitempty"`
 	Type     string          `json:"type"`
 	Function FunctionRequest `json:"function"`
+}
+
+// 添加这个方法解决kimi工具
+func (t *ToolCallRequest) SetTypeBasedOnFunctionName() {
+	if strings.HasPrefix(t.Function.Name, "$") {
+		t.Type = "builtin_function"
+	} else if t.Type == "" {
+		t.Type = "function"
+	}
 }
 
 type FunctionRequest struct {

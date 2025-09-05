@@ -191,7 +191,8 @@ func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayIn
 			}
 		}
 	}
-
+	// 处理Kimi内建工具类型  
+	request.ProcessToolTypes()
 	return request, nil
 }
 
