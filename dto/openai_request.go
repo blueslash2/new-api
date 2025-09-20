@@ -66,8 +66,13 @@ type GeneralOpenAIRequest struct {
 
 // 在 GeneralOpenAIRequest 结构体的方法区域添加
 func (r *GeneralOpenAIRequest) ProcessToolTypes() {
-	for i := range r.Tools {
-		r.Tools[i].SetTypeBasedOnFunctionName()
+	//fmt.Printf("模型信息：名称：%s ...", r.Model)
+	if strings.Contains(r.Model, "kimi") {
+		for i := range r.Tools {
+			//fmt.Println("信息A - 检测到kimi模型:", r.Model)
+			r.Tools[i].SetTypeBasedOnFunctionName()
+			//fmt.Printf("工具信息：名称：%s， 类型：%s ...", r.Tools[i].Function.Name, r.Tools[i].Type)
+		}
 	}
 }
 
