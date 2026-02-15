@@ -29,7 +29,10 @@ func sendStreamData(c *gin.Context, info *relaycommon.RelayInfo, data string, fo
 	if data == "" {
 		return nil
 	}
-
+	// 添加日志 - 打印即将发送的原始数据
+	if strings.Contains(data, "tool_calls") {
+		common.SysError(fmt.Sprintf("【流式工具调用响应】发送原始数据: %s", data))
+	}
 	if !forceFormat && !thinkToContent {
 		return helper.StringData(c, data)
 	}
@@ -137,8 +140,22 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	var (
 		lastStreamData string
 	)
-
+	var chunkCount int
 	helper.StreamScannerHandler(c, resp, info, func(data string) bool {
+		// 打印前5个chunk的delta内容
+		if chunkCount < 5 {
+			var streamResp dto.ChatCompletionsStreamResponse
+			if err := common.UnmarshalJsonStr(data, &streamResp); err == nil {
+				if len(streamResp.Choices) > 0 {
+					delta := streamResp.Choices[0].Delta
+					content := delta.GetContentString()
+					hasToolCalls := len(delta.ToolCalls) > 0
+					common.SysError(fmt.Sprintf("【董0129】【Chunk%d】content='%s', tool_calls=%v",
+						chunkCount, content, hasToolCalls))
+				}
+			}
+			chunkCount++
+		}
 		if lastStreamData != "" {
 			err := handleStreamFormat(c, info, lastStreamData, forceFormat, thinkToContent)
 			if err != nil {

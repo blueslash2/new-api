@@ -124,6 +124,7 @@ func Distribute() func(c *gin.Context) {
 			}
 		}
 		common.SetContextKey(c, constant.ContextKeyRequestStartTime, time.Now())
+		common.SysLog(fmt.Sprintf("【模型诊断器】【收到】上游请求模型: %s", modelRequest.Model))
 		SetupContextForSelectedChannel(c, channel, modelRequest.Model)
 		c.Next()
 	}

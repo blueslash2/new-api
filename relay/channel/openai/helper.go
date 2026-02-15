@@ -2,6 +2,7 @@ package openai
 
 import (
 	"encoding/json"
+	"fmt"
 	"one-api/common"
 	"one-api/dto"
 	relaycommon "one-api/relay/common"
@@ -42,14 +43,20 @@ func handleClaudeFormat(c *gin.Context, data string, info *relaycommon.RelayInfo
 }
 
 func ProcessStreamResponse(streamResponse dto.ChatCompletionsStreamResponse, responseTextBuilder *strings.Builder, toolCount *int) error {
+	common.SysError(fmt.Sprintf("ProcessStreamResponse 被调用，Choices 数量: %d", len(streamResponse.Choices)))
 	for _, choice := range streamResponse.Choices {
 		responseTextBuilder.WriteString(choice.Delta.GetContentString())
 		responseTextBuilder.WriteString(choice.Delta.GetReasoningContent())
+
 		if choice.Delta.ToolCalls != nil {
+			if len(choice.Delta.ToolCalls) > 0 {
+				common.SysError(fmt.Sprintf("注意Incoming Tool call detected - Index: %d, ToolCalls count: %d", choice.Index, len(choice.Delta.ToolCalls)))
+			}
 			if len(choice.Delta.ToolCalls) > *toolCount {
 				*toolCount = len(choice.Delta.ToolCalls)
 			}
-			for _, tool := range choice.Delta.ToolCalls {
+			for i, tool := range choice.Delta.ToolCalls {
+				common.SysError(fmt.Sprintf("注意Response Tool call %d - ID: %s, Type: %v, Function: %s, Arguments: %s", i, tool.ID, tool.Type, tool.Function.Name, tool.Function.Arguments))
 				responseTextBuilder.WriteString(tool.Function.Name)
 				responseTextBuilder.WriteString(tool.Function.Arguments)
 			}
@@ -71,6 +78,7 @@ func processTokens(relayMode int, streamItems []string, responseTextBuilder *str
 }
 
 func processChatCompletions(streamResp string, streamItems []string, responseTextBuilder *strings.Builder, toolCount *int) error {
+	common.SysError(fmt.Sprintf("processChatCompletions 被调用，streamItems 数量: %d", len(streamItems)))
 	var streamResponses []dto.ChatCompletionsStreamResponse
 	if err := json.Unmarshal(common.StringToByteSlice(streamResp), &streamResponses); err != nil {
 		// 一次性解析失败，逐个解析
@@ -93,6 +101,12 @@ func processChatCompletions(streamResp string, streamItems []string, responseTex
 			responseTextBuilder.WriteString(choice.Delta.GetContentString())
 			responseTextBuilder.WriteString(choice.Delta.GetReasoningContent())
 			if choice.Delta.ToolCalls != nil {
+				if len(choice.Delta.ToolCalls) > 0 {
+					common.SysError(fmt.Sprintf("批量处理-工具调用检测 - Index: %d, ToolCalls: %d", choice.Index, len(choice.Delta.ToolCalls)))
+					for i, tool := range choice.Delta.ToolCalls {
+						common.SysError(fmt.Sprintf("批量处理-工具详情 %d - ID: %s, Function: %s", i, tool.ID, tool.Function.Name))
+					}
+				}
 				if len(choice.Delta.ToolCalls) > *toolCount {
 					*toolCount = len(choice.Delta.ToolCalls)
 				}

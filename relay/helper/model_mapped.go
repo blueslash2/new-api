@@ -52,6 +52,11 @@ func ModelMappedHelper(c *gin.Context, info *common.RelayInfo, request any) erro
 			info.UpstreamModelName = currentModel
 		}
 	}
+	if info.IsModelMapped {
+		common2.SysLog(fmt.Sprintf("【模型诊断器】【转换后】模型映射: %s -> %s", info.OriginModelName, info.UpstreamModelName))
+	} else {
+		common2.SysLog(fmt.Sprintf("【模型诊断器】【转换后】模型无映射，保持: %s", info.OriginModelName))
+	}
 	if request != nil {
 		switch info.RelayFormat {
 		case common.RelayFormatGemini:

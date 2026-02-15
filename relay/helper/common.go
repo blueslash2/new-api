@@ -8,6 +8,7 @@ import (
 	"one-api/common"
 	"one-api/dto"
 	"one-api/types"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -64,6 +65,10 @@ func ResponseChunkData(c *gin.Context, resp dto.ResponsesStreamResponse, data st
 func StringData(c *gin.Context, str string) error {
 	//str = strings.TrimPrefix(str, "data: ")
 	//str = strings.TrimSuffix(str, "\r")
+	// 添加响应日志 - 打印原始响应数据
+	if strings.Contains(str, "tool_calls") {
+		common.SysError(fmt.Sprintf("【工具调用响应】原始数据: %s", str))
+	}
 	c.Render(-1, common.CustomEvent{Data: "data: " + str})
 	if flusher, ok := c.Writer.(http.Flusher); ok {
 		flusher.Flush()
@@ -91,6 +96,8 @@ func ObjectData(c *gin.Context, object interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error marshalling object: %w", err)
 	}
+	// 添加响应日志 - 打印发回给前端的数据
+	common.SysError(fmt.Sprintf("【响应报文】发回前端数据: %s", string(jsonData)))
 	return StringData(c, string(jsonData))
 }
 
